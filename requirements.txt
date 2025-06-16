@@ -1,0 +1,16 @@
+Flask==2.3.2
+Flask-SQLAlchemy==3.1.1
+flask
+flask-cors
+redis
+qdrant-client
+requests
+python-dotenv
+uuid
+google-generativeai
+jinja2
+google-generativeai
+feedparser
+certifi
+livekit-agents
+livekit-plugins-assemblyai
