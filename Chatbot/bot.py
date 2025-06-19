@@ -348,3 +348,4 @@ def generate_response(project: str, history: list[dict]):
     #         print(f"[WARN] No image found for keyword: '{keyword}'")
 
     return dict(text=answer, image_url=None)
+
