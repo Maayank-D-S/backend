@@ -18,7 +18,7 @@ import re
 # ──────────────────────────────────────────────────────────────────────────────
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = "gpt-4.1-mini"
+OPENAI_MODEL = "gpt-4.1"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Shared LLM and Embeddings
 llm = ChatOpenAI(model=OPENAI_MODEL, temperature=0, openai_api_key=OPENAI_API_KEY)
@@ -76,6 +76,7 @@ USER:
 
 ANSWER:
 - Limit your reply to 4–5 bullet points max.
+- before starting points just give **one line** at the top like here are the main points or some other line that seems suitable.
 - Use natural language like a real person speaking.
 - Be short, clear, and persuasive — avoid repeating details.
 - Speak like a friendly human sales executive — not like a robot.
@@ -101,6 +102,7 @@ USER:
 
 ANSWER:
 - Limit your reply to 4–5 bullet points max.
+- before starting points just give **one line** at the top like here are the main points or some other line that seems suitable.
 - Use natural language like a real person speaking.
 - Be short, clear, and persuasive — avoid repeating details.
 - Speak like a friendly human sales executive — not like a robot.
@@ -126,6 +128,7 @@ USER:
 
 ANSWER:
 - Limit your reply to 4–5 bullet points max.
+- before starting points just give **one line** at the top like here are the main points or some other line that seems suitable.
 - Use natural language like a real person speaking.
 - Be short, clear, and persuasive — avoid repeating details.
 - Speak like a friendly human sales executive — not like a robot.
@@ -133,13 +136,43 @@ ANSWER:
 
 """
 
+LEGAL_PROMPT = """
+You are a helpful real estate consultant for our customer.Clear thier doubts regarding property purchase questions and any legal queiries.
+Be very **breif**.Make sure the process is clear to them and in the end they feel confident 
 
+CONTEXT:
+{context}
+
+USER:
+{query}
+
+ANSWER:
+- Limit your reply to 4–5 bullet points max.
+- before starting points just give **one line** at the top like here are the main points or some other line that seems suitable.
+- Use natural language like a real person speaking.
+- Be short, clear, and persuasive — avoid repeating details.
+- Speak like a friendly human real estate consultant— not like a robot.
+
+"""
 # Project configuration loader
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 def _project_cfg(name: str):
+    print("Testing 3")
     if name == "Krupal Habitat":
+        print("Testing 8")
+        print("🟡 Trying to load FAISS index")
+        try:
+            vec = FAISS.load_local(
+                os.path.join(BASE_DIR, "krupaldb_faiss"),
+                embedding,
+                allow_dangerous_deserialization=True,
+            )
+            print("✅ FAISS loaded")
+        except Exception as e:
+            print(f"❌ Failed to load FAISS: {e}")
+            raise
         return dict(
             vector=FAISS.load_local(
                 os.path.join(BASE_DIR, "krupaldb_faiss"),
@@ -155,7 +188,9 @@ def _project_cfg(name: str):
             },
             tpl=KRUPAL_PROMPT,
         )
+    print("Testing 4")
     if name == "Ramvan Villas":
+        print("Testing 9")
         return dict(
             vector=FAISS.load_local(
                 os.path.join(BASE_DIR, "ramvan_villas_faiss"),
@@ -173,6 +208,7 @@ def _project_cfg(name: str):
             },
             tpl=RAMVAN_PROMPT,
         )
+    print("Testing 4")
     if name == "Firefly Homes":
         return dict(
             vector=FAISS.load_local(
@@ -185,6 +221,18 @@ def _project_cfg(name: str):
             },
             tpl=FIREFLY_PROMPT,
         )
+    print("Testing 4")
+    if name == "Legal Consultant":
+        return dict(
+            vector=FAISS.load_local(
+                os.path.join(BASE_DIR, "legal_faiss"),
+                embedding,
+                allow_dangerous_deserialization=True,
+            ),
+            images={},  # likely not needed unless you want legal diagrams or infographics
+            tpl=LEGAL_PROMPT,
+        )
+    print("Unknown Project")
     raise ValueError("Unknown project")
 
 
@@ -198,7 +246,9 @@ def _ask_llm(prompt: str, history: list[dict]):
         else:
             messages.append(AIMessage(content=h["content"]))
     messages.append(HumanMessage(content=prompt))
-
+    print("Sending messages to LLM:")
+    for msg in messages:
+        print(">", msg)
     return llm.invoke(messages).content.strip()
 
 
@@ -217,16 +267,19 @@ def _is_greeting(text: str, history):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-def generate_response(project: str, history: list[dict]):
+def generate_response(project: str, history: list[dict],voice_mode: bool):
     """
     history: full chat so far, **last item must be the latest USER msg**.
     Returns {text:str, image_url:str|None}
     """
+    print("Testing")
     cfg = _project_cfg(project)
+    print("Testing: after cfg")
     user_input = history[-1]["content"]
 
     # 1 early exits -----------------------------------------------------------
     if _is_greeting(user_input, history):
+        print("Yo")
         return dict(
             text=f"Hi! I'm your assistant for {project}. Ask me anything!",
             image_url=None,
@@ -237,14 +290,47 @@ def generate_response(project: str, history: list[dict]):
     # 2 vector context --------------------------------------------------------
     docs = cfg["vector"].similarity_search(user_input, k=5)
     context = "\n".join(d.page_content for d in docs)
+    VOICE_PROMPT_TEMPLATE=""
+    if(voice_mode):
+        VOICE_PROMPT_TEMPLATE = """
+
+You are speaking aloud to a human in voice mode.
+
+⭑ Tone & Emotion
+- Match the user's sentiment: friendly if excited, calm if unsure, concise if rushed.
+- Use a human, conversational tone — not robotic or overly formal.
+
+⭑ Style & Delivery
+- Expand abbreviations: say "square yard", not "sq. yd".
+- Speak full numbers: say "twenty thousand", not "20,000".
+- Use punctuation for natural pauses.
+
+⭑ Answering Strategy
+- Always respond in **1 natural paragraph**, not bullets.
+- Summarize everything in **around 40 words only**.
+- Do not explain every detail — highlight the most important points.
+- Always end with a **follow-up question** to keep the conversation going.
+- If the question is simple or factual (e.g., distance, direction, yes/no), answer it **briefly** — ideally 1 sentence.
+- If the question asks for full project details or comparisons, summarize it in **under 40 words**, in 1 short paragraph.
+- Always ask a relevant follow-up question to continue the conversation.
+"""
+    
 
     # 3 main prompt -----------------------------------------------------------
-    prompt = cfg["tpl"].format(
+    prompt =(
+        "Analyze the user's emotional tone and respond accordingly.\n\n"
+        +cfg["tpl"].format(
         context=context,
         query=user_input,
         image_keywords="",  # ", ".join(cfg["images"].keys()),
+        )+VOICE_PROMPT_TEMPLATE
     )
-    answer = _ask_llm(prompt, history)
+    try:
+        answer = _ask_llm(prompt, history)
+    except Exception as e:
+        print(f"[ERROR] generate_response failed during LLM call: {e}")
+        raise
+    print(f"[DEBUG] Generated answer: {answer}")
 
     # 4 policy check on answer ------------------------------------------------
     # if _violates_policy(answer, history):

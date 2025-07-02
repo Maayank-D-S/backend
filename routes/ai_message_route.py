@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from models  import AIMessage
 from database import db
 from Chatbot.bot import generate_response
+from tasks.voice_tasks import run_voice_agent
 
 ai_bp = Blueprint("ai_routes", __name__)
 
@@ -52,3 +53,18 @@ def get_messages(user_id, session_id):
             .order_by(AIMessage.timestamp)
             .all())
     return jsonify([r.to_dict() for r in rows]), 200
+
+@ai_bp.route("/start_voice_agent", methods=["POST"])
+def start_voice_agent():
+    data = request.get_json()
+    room = data.get("room")
+    identity = data.get("identity")
+    user_id = data.get("user_id")    # Our app’s user
+    session_id = data.get("session_id")
+
+    if not all([room, identity, user_id, session_id]):
+        return jsonify(error="room, identity, user_id, and session_id required"), 400
+
+
+    run_voice_agent.delay(room, identity,user_id,session_id)
+    return jsonify(message="Voice agent started"), 202

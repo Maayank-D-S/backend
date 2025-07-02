@@ -1,0 +1,1 @@
+python voice_bot.py connect --url wss://ds-nl2qsdc2.livekit.cloud --api-key APIbYcXe4urHeK8 --api-secret XNdRZ36vX5QJ0vye0eVc90Lv8sGoS5e8mIeVDCVH5yAA --room playground-57Ur-LHJw --participant-identity identity-LOBR
