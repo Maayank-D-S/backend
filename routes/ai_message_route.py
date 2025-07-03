@@ -36,7 +36,7 @@ def new_query():
     history.append({"role": "user", "content": user_msg})
 
     # LLM
-    bot = generate_response(project_name, history)
+    bot = generate_response(project_name, history,False)
     ai_row = AIMessage(user_id=user_id, session_id=session_id,
                     role="ai", message=bot["text"])
     db.session.add(ai_row)
