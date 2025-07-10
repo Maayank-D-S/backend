@@ -95,3 +95,6 @@ tmp/
 # Qdrant config and data (if local)
 qdrant_storage/
 snapshots/
+
+
+credentials.json

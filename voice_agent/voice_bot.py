@@ -55,7 +55,7 @@ def fetch_response(user_input: str, user_id: str, session_id: str) -> str:
         with app.app_context():
             # persist user message
             db.session.add(AIMessage(user_id=user_id, session_id=session_id,
-                                     role="user", message=user_input))
+                                    role="user", message=user_input))
 
             # last 19 previous → history (this + 1 = 20)
             history_rows = (
@@ -71,7 +71,7 @@ def fetch_response(user_input: str, user_id: str, session_id: str) -> str:
 
             # persist AI answer
             db.session.add(AIMessage(user_id=user_id, session_id=session_id,
-                                     role="ai", message=result["text"]))
+                                    role="ai", message=result["text"]))
             db.session.commit()
             logger.debug("[fetch_response] Bot reply: %s", result)
             return result["text"]
