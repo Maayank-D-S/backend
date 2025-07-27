@@ -404,7 +404,7 @@ You are speaking aloud to a human in voice mode.
         + cfg["tpl"].format(
             context=context,
             query=user_input,
-            image_keywords=", ".join(cfg["images"].keys()),
+            image_keywords=", ".join(cfg.get("images", {}).keys()),
         )
         + VOICE_PROMPT_TEMPLATE
     )
