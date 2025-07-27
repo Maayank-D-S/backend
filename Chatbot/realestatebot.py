@@ -85,7 +85,7 @@ For Dholera:
 - If project details are provided, confidently highlight features, pricing, and benefits in a friendly tone.
 
  Response Style:
-- Keep answers  short and crisp: maximum 3–4 bullet points.
+- Keep answers  short and crisp:answer in minimum number of points.
 - Avoid long explanations or unnecessary details.
 
 ---
